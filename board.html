@@ -42,6 +42,7 @@
     <div class="post-view-body" id="view-body"></div>
     <div class="view-btns">
       <button class="btn-back" onclick="closePost()">← 목록으로</button>
+      <button class="btn-edit" id="edit-btn" style="padding:.6rem 1.4rem; border:1px solid #e8ddd3; background:#c0622f; color:#fff; font-size:.78rem; cursor:pointer;">수정하기</button>
       <button class="btn-delete" id="delete-btn">삭제하기</button>
     </div>
   </div>
@@ -50,7 +51,7 @@
 <div class="modal-overlay" id="write-modal">
   <div class="modal">
     <button class="modal-close" onclick="closeWrite()" style="position:absolute; top:1rem; right:1rem; background:none; border:none; cursor:pointer;">✕</button>
-    <div style="font-family:'Gowun Batang'; font-size:1.4rem; margin-bottom:1.5rem;">글 작성</div>
+    <div id="modal-title" style="font-family:'Gowun Batang'; font-size:1.4rem; margin-bottom:1.5rem;">글 작성</div>
     <input type="text" id="input-title" placeholder="제목을 입력하세요"/>
     <textarea id="input-body" placeholder="내용을 입력하세요" style="min-height:150px; resize:none;"></textarea>
     <div style="display:flex; justify-content:flex-end; gap:10px;">
@@ -62,9 +63,9 @@
 
 <script>
   let posts = [];
-  let currentIdx = null; // 현재 보고 있는 글의 인덱스 저장용
+  let currentIdx = null; 
+  let isEditMode = false; // 수정 모드 판별용 변수
 
-  // 1. 초기 로드: 로컬스토리지에서 가져오기
   window.onload = function() {
     const saved = localStorage.getItem('my_posts');
     if (saved) {
@@ -85,7 +86,6 @@
     }
     empty.style.display = 'none';
     
-    // 최신글이 위로 오도록 역순 출력
     tbody.innerHTML = posts.slice().reverse().map((p, i) => {
       const actualIdx = posts.length - 1 - i;
       return `
@@ -97,11 +97,29 @@
     }).join('');
   }
 
-  function openWrite() { document.getElementById('write-modal').classList.add('open'); }
-  function closeWrite() { 
-    document.getElementById('write-modal').classList.remove('open');
+  // 새 글 작성창 열기
+  function openWrite() { 
+    isEditMode = false;
+    document.getElementById('modal-title').textContent = "글 작성";
     document.getElementById('input-title').value = '';
     document.getElementById('input-body').value = '';
+    document.getElementById('write-modal').classList.add('open'); 
+  }
+
+  // 수정창 열기 (기존 내용 불러오기)
+  function openEdit(idx) {
+    isEditMode = true;
+    currentIdx = idx;
+    const p = posts[idx];
+    
+    document.getElementById('modal-title').textContent = "글 수정";
+    document.getElementById('input-title').value = p.title;
+    document.getElementById('input-body').value = p.body;
+    document.getElementById('write-modal').classList.add('open');
+  }
+
+  function closeWrite() { 
+    document.getElementById('write-modal').classList.remove('open');
   }
 
   function submitPost() {
@@ -110,11 +128,24 @@
     if (!title || !body) { alert('제목과 내용을 모두 입력해주세요.'); return; }
 
     const now = new Date();
-    const date = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+    const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
     
-    posts.push({title, body, date});
+    if (isEditMode) {
+      // 수정 로직
+      posts[currentIdx].title = title;
+      posts[currentIdx].body = body;
+      posts[currentIdx].date = dateStr + " (수정됨)";
+    } else {
+      // 신규 등록 로직
+      posts.push({title, body, date: dateStr});
+    }
+    
     saveAndRender();
     closeWrite();
+    
+    if (isEditMode) {
+      viewPost(currentIdx); // 수정 완료 후 바뀐 내용 바로 보여주기
+    }
   }
 
   function viewPost(idx) {
@@ -124,8 +155,9 @@
     document.getElementById('view-meta').textContent = p.date;
     document.getElementById('view-body').textContent = p.body;
     
-    // 삭제 버튼에 인덱스 연결
+    // 버튼 이벤트 연결
     document.getElementById('delete-btn').onclick = function() { deletePost(idx); };
+    document.getElementById('edit-btn').onclick = function() { openEdit(idx); };
 
     document.getElementById('list-view').style.display = 'none';
     document.getElementById('post-view').classList.add('open');
@@ -133,7 +165,7 @@
 
   function deletePost(idx) {
     if(confirm('정말 삭제하시겠습니까?')) {
-      posts.splice(idx, 1); // 배열에서 해당 인덱스 삭제
+      posts.splice(idx, 1);
       saveAndRender();
       closePost();
     }
