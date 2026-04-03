@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>공부기록 — 이해</title>
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./study.css"/>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="./main.html">이해연<span>.</span></a>
+  <div class="nav-links">
+    <a href="main.html#about">소개</a>
+    <a href="main.html#skills">관심사</a>
+    <a href="main.html#projects">프로젝트</a>
+    <a href="./board.html">게시판</a>
+    <a href="./study.html" class="active">공부기록</a>
+    <a href="main.html#contact">연락처</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <!-- 목록 -->
+  <div id="list-view">
+    <p class="page-label">Study</p>
+    <h1 class="page-title">공부한 내용</h1>
+    <div class="study-top">
+      <div class="filter-btns">
+        <button class="filter-btn active" onclick="setFilter('전체')">전체</button>
+        <button class="filter-btn" onclick="setFilter('기획')">기획</button>
+        <button class="filter-btn" onclick="setFilter('마케팅')">마케팅</button>
+        <button class="filter-btn" onclick="setFilter('기타')">기타</button>
+      </div>
+      <button class="btn-write" onclick="openWrite()">기록 추가</button>
+    </div>
+    <p class="study-count">총 <span id="post-count">0</span>개의 기록이 있습니다.</p>
+    <div class="cards-grid" id="cards-grid">
+      <div class="cards-empty" id="cards-empty">아직 작성된 기록이 없습니다.</div>
+    </div>
+  </div>
+
+  <!-- 상세 -->
+  <div id="post-view" class="post-view">
+    <p class="page-label">Study</p>
+    <span class="post-view-tag" id="view-tag"></span>
+    <div class="post-view-title" id="view-title"></div>
+    <div class="post-view-meta" id="view-meta"></div>
+    <div class="post-view-body" id="view-body"></div>
+    <div class="post-view-imgs" id="view-imgs"></div>
+    <div class="post-view-actions">
+      <button class="btn-back" onclick="closePost()">← 목록으로</button>
+      <button class="btn-edit" onclick="openEdit()">수정</button>
+      <button class="btn-delete" onclick="deletePost()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- 작성 모달 -->
+<div class="modal-overlay" id="write-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeWrite()">✕</button>
+    <div class="modal-title">기록 추가</div>
+    <input type="text" id="input-title" placeholder="제목을 입력하세요"/>
+    <select id="input-cat">
+      <option value="기획">기획</option>
+      <option value="마케팅">마케팅</option>
+      <option value="기타">기타</option>
+    </select>
+    <textarea id="input-body" placeholder="공부한 내용을 입력하세요"></textarea>
+    <label class="img-upload-label">
+      📎 이미지 첨부 (여러 장 가능)
+      <input type="file" id="input-imgs" accept="image/*" multiple style="display:none" onchange="previewImgs('input-imgs','input-preview')"/>
+    </label>
+    <div class="img-preview-wrap" id="input-preview"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeWrite()">취소</button>
+      <button class="btn-submit" onclick="submitPost()">등록</button>
+    </div>
+  </div>
+</div>
+
+<!-- 수정 모달 -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeEdit()">✕</button>
+    <div class="modal-title">기록 수정</div>
+    <input type="text" id="edit-title" placeholder="제목을 입력하세요"/>
+    <select id="edit-cat">
+      <option value="기획">기획</option>
+      <option value="마케팅">마케팅</option>
+      <option value="기타">기타</option>
+    </select>
+    <textarea id="edit-body" placeholder="공부한 내용을 입력하세요"></textarea>
+    <label class="img-upload-label">
+      📎 이미지 첨부 (여러 장 가능)
+      <input type="file" id="edit-imgs" accept="image/*" multiple style="display:none" onchange="previewImgs('edit-imgs','edit-preview')"/>
+    </label>
+    <div class="img-preview-wrap" id="edit-preview"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeEdit()">취소</button>
+      <button class="btn-submit" onclick="submitEdit()">저장</button>
+    </div>
+  </div>
+</div>
+<script>
+  // 1. 초기화 시 LocalStorage에서 기존 데이터를 불러옵니다. 데이터가 없으면 빈 배열로 시작합니다.
+  let posts = JSON.parse(localStorage.getItem('studyPosts')) || [];
+  let currentFilter = '전체';
+  let currentIdx = -1;
+  let inputImgData = [];
+  let editImgData = [];
+
+  // 2. 데이터를 LocalStorage에 반영하는 공통 함수
+  function saveToLocalStorage() {
+    localStorage.setItem('studyPosts', JSON.stringify(posts));
+  }
+
+  function setFilter(f) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.textContent === f));
+    renderCards();
+  }
+
+  function renderCards() {
+    const grid = document.getElementById('cards-grid');
+    const filtered = currentFilter === '전체' ? posts : posts.filter(p => p.cat === currentFilter);
+    document.getElementById('post-count').textContent = posts.length;
+    if (filtered.length === 0) { grid.innerHTML = '<div class="cards-empty">해당하는 기록이 없습니다.</div>'; return; }
+    
+    grid.innerHTML = filtered.slice().reverse().map(p => {
+      const idx = posts.indexOf(p);
+      const imgHtml = p.imgs && p.imgs[0] ? `<img class="card-img" src="${p.imgs[0]}" alt=""/>` : '';
+      return `<div class="study-card" onclick="viewPost(${idx})">
+        ${imgHtml}
+        <div class="card-top"><span class="card-tag">${p.cat}</span><span class="card-date">${p.date}</span></div>
+        <div class="card-title">${p.title}</div>
+        <div class="card-preview">${p.body}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function previewImgs(inputId, previewId) {
+    const files = document.getElementById(inputId).files;
+    const wrap = document.getElementById(previewId);
+    const dataArr = inputId === 'input-imgs' ? inputImgData : editImgData;
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        dataArr.push(e.target.result);
+        const div = document.createElement('div');
+        div.className = 'img-remove';
+        div.innerHTML = `<img src="${e.target.result}" style="width:80px;height:80px;object-fit:cover;border:1px solid var(--border)"/>
+          <button class="img-remove-btn" onclick="removePreviewImg(this, '${previewId}', ${dataArr.length-1})">✕</button>`;
+        wrap.appendChild(div);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function removePreviewImg(btn, previewId, idx) {
+    const dataArr = previewId === 'input-preview' ? inputImgData : editImgData;
+    dataArr.splice(idx, 1);
+    btn.parentElement.remove();
+  }
+
+  function openWrite() {
+    inputImgData = [];
+    document.getElementById('input-preview').innerHTML = '';
+    document.getElementById('write-modal').classList.add('open');
+    document.getElementById('input-title').focus();
+  }
+  
+  function closeWrite() {
+    document.getElementById('write-modal').classList.remove('open');
+    document.getElementById('input-title').value = '';
+    document.getElementById('input-body').value = '';
+    document.getElementById('input-preview').innerHTML = '';
+    inputImgData = [];
+  }
+  
+  function submitPost() {
+    const title = document.getElementById('input-title').value.trim();
+    const cat = document.getElementById('input-cat').value;
+    const body = document.getElementById('input-body').value.trim();
+    if (!title) { alert('제목을 입력해주세요.'); return; }
+    if (!body) { alert('내용을 입력해주세요.'); return; }
+    const now = new Date();
+    const date = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+    
+    posts.push({title, cat, body, date, imgs: [...inputImgData]});
+    
+    saveToLocalStorage(); // 변경사항 저장
+    closeWrite(); 
+    renderCards();
+  }
+
+  function viewPost(idx) {
+    currentIdx = idx;
+    const p = posts[idx];
+    document.getElementById('view-tag').textContent = p.cat;
+    document.getElementById('view-title').textContent = p.title;
+    document.getElementById('view-meta').textContent = p.date;
+    document.getElementById('view-body').textContent = p.body;
+    const imgsWrap = document.getElementById('view-imgs');
+    imgsWrap.innerHTML = (p.imgs || []).map(src => `<img src="${src}" alt=""/>`).join('');
+    document.getElementById('list-view').style.display = 'none';
+    document.getElementById('post-view').classList.add('open');
+  }
+  
+  function closePost() {
+    currentIdx = -1;
+    document.getElementById('list-view').style.display = 'block';
+    document.getElementById('post-view').classList.remove('open');
+  }
+
+  function openEdit() {
+    const p = posts[currentIdx];
+    editImgData = [...(p.imgs || [])];
+    document.getElementById('edit-title').value = p.title;
+    document.getElementById('edit-cat').value = p.cat;
+    document.getElementById('edit-body').value = p.body;
+    const wrap = document.getElementById('edit-preview');
+    wrap.innerHTML = editImgData.map((src, i) =>
+      `<div class="img-remove"><img src="${src}" style="width:80px;height:80px;object-fit:cover;border:1px solid var(--border)"/>
+        <button class="img-remove-btn" onclick="removePreviewImg(this,'edit-preview',${i})">✕</button></div>`
+    ).join('');
+    document.getElementById('edit-modal').classList.add('open');
+  }
+  
+  function closeEdit() { document.getElementById('edit-modal').classList.remove('open'); }
+  
+  function submitEdit() {
+    const title = document.getElementById('edit-title').value.trim();
+    const cat = document.getElementById('edit-cat').value;
+    const body = document.getElementById('edit-body').value.trim();
+    if (!title) { alert('제목을 입력해주세요.'); return; }
+    if (!body) { alert('내용을 입력해주세요.'); return; }
+    
+    posts[currentIdx] = { ...posts[currentIdx], title, cat, body, imgs: [...editImgData] };
+    
+    saveToLocalStorage(); // 변경사항 저장
+    closeEdit(); 
+    viewPost(currentIdx); 
+    renderCards();
+  }
+
+  function deletePost() {
+    if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+    
+    posts.splice(currentIdx, 1);
+    
+    saveToLocalStorage(); // 변경사항 저장
+    closePost(); 
+    renderCards();
+  }
+
+  // 첫 페이지 로드 시 렌더링
+  renderCards();
+</script>
+</body>
+</html>
