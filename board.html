@@ -181,6 +181,9 @@
     document.getElementById('list-view').style.display = 'block';
     document.getElementById('post-view').classList.remove('open');
   }
+  if (localStorage.getItem('isLoggedIn') !== 'true') {
+  document.querySelector('.btn-write').style.display = 'none';
+}
 </script>
 </body>
 </html>

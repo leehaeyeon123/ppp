@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>로그인 — 이해연</title>
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet"/>
+  
+  <style>
+    /* 기존 스타일과 100% 통일된 감성 색상 톤 */
+    :root {
+      --bg: #fdf8f3;
+      --text: #1e1a16;
+      --muted: #9a8c7e;
+      --accent: #c0622f;
+      --border: #e8ddd3;
+      --surface: #fff;
+    }
+    
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-weight: 300;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .login-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 3rem 2.5rem;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(30, 26, 22, 0.03);
+    }
+
+    .login-logo {
+      font-family: 'Gowun Batang', serif;
+      font-size: 1.5rem;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+    
+    .login-logo span { color: var(--accent); }
+
+    .login-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 2.5rem;
+    }
+
+    .input-group {
+      text-align: left;
+      margin-bottom: 1.2rem;
+    }
+
+    label {
+      font-size: 0.75rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 0.8rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 0.9rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: background 0.2s;
+      margin-top: 1rem;
+    }
+
+    .btn-login:hover {
+      background: #a04e22;
+    }
+
+    /* 🔥 메인으로 바로가기 링크 스타일 추가 */
+    .back-link {
+      display: inline-block;
+      margin-top: 1.5rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .back-link:hover {
+      color: var(--text);
+      border-bottom-color: var(--text);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-wrap">
+    <div class="login-logo">이해연<span>.</span></div>
+    <div class="login-sub">ADMIN LOGIN</div>
+
+    <div class="input-group">
+      <label for="admin-id">아이디</label>
+      <input type="text" id="admin-id" placeholder="아이디를 입력하세요"/>
+    </div>
+
+    <div class="input-group">
+      <label for="admin-pw">비밀번호</label>
+      <input type="password" id="admin-pw" placeholder="비밀번호를 입력하세요" onkeypress="if(event.key === 'Enter') handleLogin()"/>
+    </div>
+
+    <button class="btn-login" onclick="handleLogin()">로그인</button>
+    
+    
+  </div>
+
+  <script>
+    function handleLogin() {
+      const idInput = document.getElementById('admin-id').value.trim();
+      const pwInput = document.getElementById('admin-pw').value;
+      
+      // 🔒 지정하신 아이디와 비밀번호 설정
+      const correctId = "leehaeyeon";
+      const correctPw = "1234"; // 비밀번호는 원하시는 걸로 자유롭게 바꾸세요!
+
+      if (idInput === correctId && pwInput === correctPw) {
+        // 브라우저 로컬스토리지에 로그인 성공 기록 남기기
+        localStorage.setItem('isLoggedIn', 'true');
+        alert('반갑습니다, 해연님! 관리자 모드로 진입합니다.');
+        
+        // 로그인 성공 시 게시판으로 이동
+        window.location.href = "./index.html"; 
+      } else {
+        alert('아이디 또는 비밀번호가 일치하지 않습니다.');
+        document.getElementById('admin-pw').value = '';
+        document.getElementById('admin-id').focus();
+      }
+    }
+  </script>
+</body>
+</html>

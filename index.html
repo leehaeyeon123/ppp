@@ -4,11 +4,19 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>이해연 — 기획과 마케팅을 공부하는 중</title>
-  <!-- <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet"/> -->
-  <!-- <style>
-    
-  </style> -->
   <link rel="stylesheet" href="./style.css">
+  
+  <style>
+    /* 로그아웃 버튼 스타일 추가 (기존 톤 유지) */
+    .btn-auth {
+      cursor: pointer;
+      color: var(--muted) !important;
+      font-weight: 500;
+    }
+    .btn-auth:hover {
+      color: var(--accent) !important;
+    }
+  </style>
 </head>
 <body>
 
@@ -21,10 +29,10 @@
     <a href="./board.html">게시판</a>
     <a href="./study.html">공부기록</a>
     <a href="#contact">연락처</a>
+    <a id="auth-btn" class="btn-auth">로그인</a>
   </div>
 </nav>
 
-<!-- 히어로 -->
 <section id="hero">
   <div class="hero-inner">
     <p class="hero-tag">✦ 기획과 마케팅을 공부하고 있습니다</p>
@@ -174,6 +182,7 @@
 </footer>
 
 <script>
+  // 1. 기존 화면 등장 애니메이션 스크립트
   const reveals = document.querySelectorAll('.reveal');
   const obs = new IntersectionObserver(entries => {
     entries.forEach((e, i) => {
@@ -181,6 +190,27 @@
     });
   }, {threshold: 0.08});
   reveals.forEach(r => obs.observe(r));
+
+  // 2. 🔥 로그인/로그아웃 판단 및 제어 스크립트 추가
+  const authBtn = document.getElementById('auth-btn');
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+
+  if (isLoggedIn) {
+    // 🔓 로그인 된 상태라면
+    authBtn.textContent = '로그아웃';
+    authBtn.onclick = function() {
+      if (confirm('로그아웃 하시겠습니까?')) {
+        localStorage.removeItem('isLoggedIn'); // 로그인 상태 삭제
+        window.location.href = "./login.html"; // 로그인 창으로 튕기기
+      }
+    };
+  } else {
+    // 🔒 로그인 안 된 상태라면
+    authBtn.textContent = '로그인';
+    authBtn.onclick = function() {
+      window.location.href = "./login.html"; // 로그인 창으로 보내기
+    };
+  }
 </script>
 </body>
 </html>
