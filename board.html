@@ -27,7 +27,7 @@
     <h1 class="page-title">게시판</h1>
     <div class="board-top">
       <span class="board-count">총 <span id="post-count">0</span>개의 글이 있습니다.</span>
-      <button class="btn-write" onclick="openWrite()">글 작성</button>
+      <button class="btn-write" id="main-write-btn" onclick="openWrite()" style="display: none;">글 작성</button>
     </div>
     <table>
       <thead><tr><th class="td-num">번호</th><th>제목</th><th class="td-date">날짜</th></tr></thead>
@@ -43,8 +43,8 @@
     <div class="post-view-body" id="view-body"></div>
     <div class="view-btns">
       <button class="btn-back" onclick="closePost()">← 목록으로</button>
-      <button class="btn-edit" id="edit-btn" style="padding:.6rem 1.4rem; border:1px solid #e8ddd3; background:#c0622f; color:#fff; font-size:.78rem; cursor:pointer;">수정하기</button>
-      <button class="btn-delete" id="delete-btn">삭제하기</button>
+      <button class="btn-edit" id="edit-btn" style="display:none; padding:.6rem 1.4rem; border:1px solid #e8ddd3; background:#c0622f; color:#fff; font-size:.78rem; cursor:pointer;">수정하기</button>
+      <button class="btn-delete" id="delete-btn" style="display:none;">삭제하기</button>
     </div>
   </div>
 </div>
@@ -65,9 +65,17 @@
 <script>
   let posts = [];
   let currentIdx = null; 
-  let isEditMode = false; // 수정 모드 판별용 변수
+  let isEditMode = false;
+  
+  // 로그인 상태 확인 변수
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
 
   window.onload = function() {
+    // 1. 로그인 여부에 따라 작성 버튼 표시
+    if (isLoggedIn) {
+      document.getElementById('main-write-btn').style.display = 'block';
+    }
+
     const saved = localStorage.getItem('my_posts');
     if (saved) {
       posts = JSON.parse(saved);
@@ -98,8 +106,8 @@
     }).join('');
   }
 
-  // 새 글 작성창 열기
   function openWrite() { 
+    if (!isLoggedIn) { alert('관리자만 작성 가능합니다.'); return; }
     isEditMode = false;
     document.getElementById('modal-title').textContent = "글 작성";
     document.getElementById('input-title').value = '';
@@ -107,12 +115,11 @@
     document.getElementById('write-modal').classList.add('open'); 
   }
 
-  // 수정창 열기 (기존 내용 불러오기)
   function openEdit(idx) {
+    if (!isLoggedIn) return;
     isEditMode = true;
     currentIdx = idx;
     const p = posts[idx];
-    
     document.getElementById('modal-title').textContent = "글 수정";
     document.getElementById('input-title').value = p.title;
     document.getElementById('input-body').value = p.body;
@@ -124,6 +131,7 @@
   }
 
   function submitPost() {
+    if (!isLoggedIn) return;
     const title = document.getElementById('input-title').value.trim();
     const body = document.getElementById('input-body').value.trim();
     if (!title || !body) { alert('제목과 내용을 모두 입력해주세요.'); return; }
@@ -132,12 +140,10 @@
     const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
     
     if (isEditMode) {
-      // 수정 로직
       posts[currentIdx].title = title;
       posts[currentIdx].body = body;
       posts[currentIdx].date = dateStr + " (수정됨)";
     } else {
-      // 신규 등록 로직
       posts.push({title, body, date: dateStr});
     }
     
@@ -145,7 +151,7 @@
     closeWrite();
     
     if (isEditMode) {
-      viewPost(currentIdx); // 수정 완료 후 바뀐 내용 바로 보여주기
+      viewPost(currentIdx); 
     }
   }
 
@@ -156,15 +162,26 @@
     document.getElementById('view-meta').textContent = p.date;
     document.getElementById('view-body').textContent = p.body;
     
-    // 버튼 이벤트 연결
-    document.getElementById('delete-btn').onclick = function() { deletePost(idx); };
-    document.getElementById('edit-btn').onclick = function() { openEdit(idx); };
+    // 수정/삭제 버튼 노출 여부 제어
+    const editBtn = document.getElementById('edit-btn');
+    const deleteBtn = document.getElementById('delete-btn');
+    
+    if (isLoggedIn) {
+      editBtn.style.display = 'inline-block';
+      deleteBtn.style.display = 'inline-block';
+      editBtn.onclick = function() { openEdit(idx); };
+      deleteBtn.onclick = function() { deletePost(idx); };
+    } else {
+      editBtn.style.display = 'none';
+      deleteBtn.style.display = 'none';
+    }
 
     document.getElementById('list-view').style.display = 'none';
     document.getElementById('post-view').classList.add('open');
   }
 
   function deletePost(idx) {
+    if (!isLoggedIn) return;
     if(confirm('정말 삭제하시겠습니까?')) {
       posts.splice(idx, 1);
       saveAndRender();
@@ -181,9 +198,6 @@
     document.getElementById('list-view').style.display = 'block';
     document.getElementById('post-view').classList.remove('open');
   }
-  if (localStorage.getItem('isLoggedIn') !== 'true') {
-  document.querySelector('.btn-write').style.display = 'none';
-}
 </script>
 </body>
 </html>
