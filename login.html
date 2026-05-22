@@ -25,6 +25,7 @@
       font-family: 'Noto Sans KR', sans-serif;
       font-weight: 300;
       display: flex;
+      flex-direction: column; /* 링크 배치를 위해 변경 */
       justify-content: center;
       align-items: center;
       min-height: 100vh;
@@ -107,10 +108,16 @@
       background: #a04e22;
     }
 
-    /* 🔥 메인으로 바로가기 링크 스타일 추가 */
+    /* 🛠️ [추가] 하단 네비게이션 링크 영역 스타일 */
+    .auth-links-wrap {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+    }
+
     .back-link {
       display: inline-block;
-      margin-top: 1.5rem;
       font-size: 0.78rem;
       color: var(--muted);
       text-decoration: none;
@@ -142,7 +149,10 @@
 
     <button class="btn-login" onclick="handleLogin()">로그인</button>
     
-    
+    <div class="auth-links-wrap">
+      <a href="./signup.html" class="back-link">회원가입하기</a>
+      <a href="./index.html" class="back-link">메인으로 바로가기</a>
+    </div>
   </div>
 
   <script>
@@ -150,16 +160,20 @@
       const idInput = document.getElementById('admin-id').value.trim();
       const pwInput = document.getElementById('admin-pw').value;
       
-      // 🔒 지정하신 아이디와 비밀번호 설정
+      // 🔒 회원가입 기능을 사용하더라도 로컬스토리지에 데이터가 없을 때를 대비한 마스터 계정 기본값 유지
       const correctId = "leehaeyeon";
-      const correctPw = "1234"; // 비밀번호는 원하시는 걸로 자유롭게 바꾸세요!
+      const correctPw = "1234"; 
 
-      if (idInput === correctId && pwInput === correctPw) {
-        // 브라우저 로컬스토리지에 로그인 성공 기록 남기기
+      // 1. 먼저 로컬스토리지에 가입된 유저 목록이 있는지 확인합니다.
+      let users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+      
+      // 2. 가입된 유저 중 입력한 정보와 일치하는 계정이 있는지 찾습니다.
+      const matchedUser = users.find(user => user.id === idInput && user.password === pwInput);
+
+      // 3. 새로 가입한 유저 정보가 맞거나, 기존 하드코딩된 마스터 계정 정보와 일치할 때 로그인 처리
+      if (matchedUser || (idInput === correctId && pwInput === correctPw)) {
         localStorage.setItem('isLoggedIn', 'true');
         alert('반갑습니다, 해연님! 관리자 모드로 진입합니다.');
-        
-        // 로그인 성공 시 게시판으로 이동
         window.location.href = "./index.html"; 
       } else {
         alert('아이디 또는 비밀번호가 일치하지 않습니다.');
