@@ -1,11 +1,22 @@
+<!-- [study.html] 전체 교체 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>공부기록 — 이해</title>
+  <title>공부기록 — 이해연</title>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./study.css"/>
+  <!-- 마크다운 라이브러리 추가 -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* 마크다운 스타일 보정 */
+    .post-view-body h1, .post-view-body h2, .post-view-body h3 { margin: 1rem 0 0.5rem; color: var(--text); font-family: 'Gowun Batang'; }
+    .post-view-body p { margin-bottom: 0.8rem; }
+    .post-view-body ul, .post-view-body ol { padding-left: 1.5rem; margin-bottom: 0.8rem; }
+    .post-view-body code { background: var(--bg2); padding: 0.2rem 0.4rem; font-size: 0.85rem; border-radius: 4px; }
+    .post-view-body pre { background: #2d3748; color: #fff; padding: 1rem; overflow-x: auto; border-radius: 6px; margin: 1rem 0; font-size: 0.85rem; line-height: 1.4; }
+  </style>
 </head>
 <body>
 
@@ -55,17 +66,18 @@
   </div>
 </div>
 
+<!-- 모달 영역 생략하지 않고 권한에 맞춰 연동유지 -->
 <div class="modal-overlay" id="write-modal">
   <div class="modal">
     <button class="modal-close" onclick="closeWrite()">✕</button>
-    <div class="modal-title">기록 추가</div>
+    <div class="modal-title">기록 추가 (마크다운)</div>
     <input type="text" id="input-title" placeholder="제목을 입력하세요"/>
     <select id="input-cat">
       <option value="기획">기획</option>
       <option value="마케팅">마케팅</option>
       <option value="기타">기타</option>
     </select>
-    <textarea id="input-body" placeholder="공부한 내용을 입력하세요"></textarea>
+    <textarea id="input-body" placeholder="공부한 내용을 마크다운으로 입력하세요"></textarea>
     <label class="img-upload-label">
       📎 이미지 첨부 (여러 장 가능)
       <input type="file" id="input-imgs" accept="image/*" multiple style="display:none" onchange="previewImgs('input-imgs','input-preview')"/>
@@ -100,6 +112,7 @@
     </div>
   </div>
 </div>
+
 <script>
   let posts = JSON.parse(localStorage.getItem('studyPosts')) || [];
   let currentFilter = '전체';
@@ -107,11 +120,12 @@
   let inputImgData = [];
   let editImgData = [];
   
-  // 로그인 상태 확인
+  // 🔒 오직 'admin' 권한이 있는 해연님만 작성 가능 하도록 엄격 제어
   const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  const isAdmin = localStorage.getItem('userRole') === 'admin';
 
   window.onload = function() {
-    if (isLoggedIn) {
+    if (isLoggedIn && isAdmin) {
       document.getElementById('main-write-btn').style.display = 'block';
     }
     renderCards();
@@ -136,6 +150,7 @@
     grid.innerHTML = filtered.slice().reverse().map(p => {
       const idx = posts.indexOf(p);
       const imgHtml = p.imgs && p.imgs[0] ? `<img class="card-img" src="${p.imgs[0]}" alt=""/>` : '';
+      // 프리뷰 텍스트는 마크다운 태그를 제외한 순수 텍스트 표현을 위해 정규식으로 태그 살짝 걷어낼 수 있으나 기본값 유지
       return `<div class="study-card" onclick="viewPost(${idx})">
         ${imgHtml}
         <div class="card-top"><span class="card-tag">${p.cat}</span><span class="card-date">${p.date}</span></div>
@@ -170,7 +185,7 @@
   }
 
   function openWrite() {
-    if (!isLoggedIn) { alert('관리자만 작성 가능합니다.'); return; }
+    if (!isLoggedIn || !isAdmin) { alert('해연(관리자)님만 작성 가능합니다.'); return; }
     inputImgData = [];
     document.getElementById('input-preview').innerHTML = '';
     document.getElementById('write-modal').classList.add('open');
@@ -186,12 +201,12 @@
   }
   
   function submitPost() {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || !isAdmin) return;
     const title = document.getElementById('input-title').value.trim();
     const cat = document.getElementById('input-cat').value;
-    const body = document.getElementById('input-body').value.trim();
-    if (!title) { alert('제목을 입력해주세요.'); return; }
-    if (!body) { alert('내용을 입력해주세요.'); return; }
+    const body = document.getElementById('input-body').value;
+    if (!title || !body.trim()) { alert('내용을 입력해주세요.'); return; }
+    
     const now = new Date();
     const date = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
     
@@ -207,12 +222,15 @@
     document.getElementById('view-tag').textContent = p.cat;
     document.getElementById('view-title').textContent = p.title;
     document.getElementById('view-meta').textContent = p.date;
-    document.getElementById('view-body').textContent = p.body;
+    
+    // 🛠️ 공부기록 본문 마크다운 파싱 렌더링 적용
+    document.getElementById('view-body').innerHTML = marked.parse(p.body);
+    
     const imgsWrap = document.getElementById('view-imgs');
     imgsWrap.innerHTML = (p.imgs || []).map(src => `<img src="${src}" alt=""/>`).join('');
     
-    // 수정/삭제 버튼 노출 여부
-    if (isLoggedIn) {
+    // 관리자일때만 수정/삭제 보이기
+    if (isLoggedIn && isAdmin) {
       document.getElementById('view-edit-btn').style.display = 'inline-block';
       document.getElementById('view-delete-btn').style.display = 'inline-block';
     } else {
@@ -231,7 +249,7 @@
   }
 
   function openEdit() {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || !isAdmin) return;
     const p = posts[currentIdx];
     editImgData = [...(p.imgs || [])];
     document.getElementById('edit-title').value = p.title;
@@ -248,12 +266,11 @@
   function closeEdit() { document.getElementById('edit-modal').classList.remove('open'); }
   
   function submitEdit() {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || !isAdmin) return;
     const title = document.getElementById('edit-title').value.trim();
     const cat = document.getElementById('edit-cat').value;
-    const body = document.getElementById('edit-body').value.trim();
-    if (!title) { alert('제목을 입력해주세요.'); return; }
-    if (!body) { alert('내용을 입력해주세요.'); return; }
+    const body = document.getElementById('edit-body').value;
+    if (!title || !body.trim()) { alert('내용을 입력해주세요.'); return; }
     
     posts[currentIdx] = { ...posts[currentIdx], title, cat, body, imgs: [...editImgData] };
     saveToLocalStorage();
@@ -263,15 +280,13 @@
   }
 
   function deletePost() {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || !isAdmin) return;
     if (!confirm('이 기록을 삭제하시겠습니까?')) return;
     posts.splice(currentIdx, 1);
     saveToLocalStorage();
     closePost(); 
     renderCards();
   }
-
-  // 초기 렌더링은 window.onload와 통합됨
 </script>
 </body>
 </html>

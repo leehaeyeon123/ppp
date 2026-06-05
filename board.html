@@ -1,3 +1,4 @@
+<!-- [board.html] 전체 교체 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -6,6 +7,16 @@
   <title>게시판 — 이해연</title>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./boardstyle.css">
+  <!-- 마크다운 변환 라이브러리 추가 -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* 마크다운 내부 스타일 가독성 보정 */
+    .post-view-body h1, .post-view-body h2, .post-view-body h3 { margin: 1rem 0 0.5rem; color: var(--text); font-family: 'Gowun Batang'; }
+    .post-view-body p { margin-bottom: 0.8rem; }
+    .post-view-body ul, .post-view-body ol { padding-left: 1.5rem; margin-bottom: 0.8rem; }
+    .post-view-body code { background: var(--bg2); padding: 0.2rem 0.4rem; font-size: 0.85rem; border-radius: 4px; }
+    .post-view-body pre { background: #2d3748; color: #fff; padding: 1rem; overflow-x: auto; border-radius: 6px; margin: 1rem 0; font-size: 0.85rem; line-height: 1.4; }
+  </style>
 </head>
 <body>
 
@@ -52,9 +63,9 @@
 <div class="modal-overlay" id="write-modal">
   <div class="modal">
     <button class="modal-close" onclick="closeWrite()" style="position:absolute; top:1rem; right:1rem; background:none; border:none; cursor:pointer;">✕</button>
-    <div id="modal-title" style="font-family:'Gowun Batang'; font-size:1.4rem; margin-bottom:1.5rem;">글 작성</div>
+    <div id="modal-title" style="font-family:'Gowun Batang'; font-size:1.4rem; margin-bottom:1.5rem;">글 작성 (마크다운 지원)</div>
     <input type="text" id="input-title" placeholder="제목을 입력하세요"/>
-    <textarea id="input-body" placeholder="내용을 입력하세요" style="min-height:150px; resize:none;"></textarea>
+    <textarea id="input-body" placeholder="내용을 입력하세요 (# 제목, - 리스트, **굵게** 등 마크다운 가능)" style="min-height:200px; resize:vertical;"></textarea>
     <div style="display:flex; justify-content:flex-end; gap:10px;">
       <button onclick="closeWrite()" class="btn-back">취소</button>
       <button onclick="submitPost()" class="btn-write">등록</button>
@@ -67,11 +78,10 @@
   let currentIdx = null; 
   let isEditMode = false;
   
-  // 로그인 상태 확인 변수
+  // 로그인 유무 및 권한 파악 (일반 회원, 관리자 모두 게시판 글쓰기 허용)
   const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
 
   window.onload = function() {
-    // 1. 로그인 여부에 따라 작성 버튼 표시
     if (isLoggedIn) {
       document.getElementById('main-write-btn').style.display = 'block';
     }
@@ -107,7 +117,7 @@
   }
 
   function openWrite() { 
-    if (!isLoggedIn) { alert('관리자만 작성 가능합니다.'); return; }
+    if (!isLoggedIn) { alert('로그인 후 이용 가능합니다.'); return; }
     isEditMode = false;
     document.getElementById('modal-title').textContent = "글 작성";
     document.getElementById('input-title').value = '';
@@ -133,8 +143,8 @@
   function submitPost() {
     if (!isLoggedIn) return;
     const title = document.getElementById('input-title').value.trim();
-    const body = document.getElementById('input-body').value.trim();
-    if (!title || !body) { alert('제목과 내용을 모두 입력해주세요.'); return; }
+    const body = document.getElementById('input-body').value; // 마크다운 공백 보존을 위해 trim 제거 혹은 유연하게 처리
+    if (!title || !body.trim()) { alert('제목과 내용을 모두 입력해주세요.'); return; }
 
     const now = new Date();
     const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
@@ -160,9 +170,10 @@
     const p = posts[idx];
     document.getElementById('view-title').textContent = p.title;
     document.getElementById('view-meta').textContent = p.date;
-    document.getElementById('view-body').textContent = p.body;
     
-    // 수정/삭제 버튼 노출 여부 제어
+    // 🛠️ 마크다운 변환 렌더링 적용 
+    document.getElementById('view-body').innerHTML = marked.parse(p.body);
+    
     const editBtn = document.getElementById('edit-btn');
     const deleteBtn = document.getElementById('delete-btn');
     
