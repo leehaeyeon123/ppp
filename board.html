@@ -1,4 +1,3 @@
-<!-- [board.html] 전체 교체 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -7,15 +6,33 @@
   <title>게시판 — 이해연</title>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./boardstyle.css">
-  <!-- 마크다운 변환 라이브러리 추가 -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
-    /* 마크다운 내부 스타일 가독성 보정 */
-    .post-view-body h1, .post-view-body h2, .post-view-body h3 { margin: 1rem 0 0.5rem; color: var(--text); font-family: 'Gowun Batang'; }
-    .post-view-body p { margin-bottom: 0.8rem; }
-    .post-view-body ul, .post-view-body ol { padding-left: 1.5rem; margin-bottom: 0.8rem; }
-    .post-view-body code { background: var(--bg2); padding: 0.2rem 0.4rem; font-size: 0.85rem; border-radius: 4px; }
-    .post-view-body pre { background: #2d3748; color: #fff; padding: 1rem; overflow-x: auto; border-radius: 6px; margin: 1rem 0; font-size: 0.85rem; line-height: 1.4; }
+    /* ==========================================================================
+       [통일] 마크다운 및 커스텀 스타일 렌더링 서식
+       ========================================================================== */
+    .post-view-body {
+      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.75;
+      word-wrap: break-word;
+    }
+
+    .post-view-body strong {
+      font-weight: 700;
+      color: var(--accent) !important;
+    }
+    .post-view-body em {
+      font-style: italic;
+      color: inherit;
+    }
+    .post-view-body u {
+      text-decoration: underline;
+      text-underline-position: under;
+    }
+    
+    .btn-auth { cursor: pointer; color: var(--muted) !important; font-weight: 500; }
+    .btn-auth:hover { color: var(--accent) !important; }
   </style>
 </head>
 <body>
@@ -29,6 +46,7 @@
     <a href="board.html" class="active">게시판</a>
     <a href="./study.html">공부기록</a>
     <a href="index.html#contact">연락처</a>
+    <a id="auth-btn" class="btn-auth">로그인</a>
   </div>
 </nav>
 
@@ -63,9 +81,9 @@
 <div class="modal-overlay" id="write-modal">
   <div class="modal">
     <button class="modal-close" onclick="closeWrite()" style="position:absolute; top:1rem; right:1rem; background:none; border:none; cursor:pointer;">✕</button>
-    <div id="modal-title" style="font-family:'Gowun Batang'; font-size:1.4rem; margin-bottom:1.5rem;">글 작성 (마크다운 지원)</div>
+    <div id="modal-title" style="font-family:'Gowun Batang'; font-size:1.4rem; margin-bottom:1.5rem;">글 작성</div>
     <input type="text" id="input-title" placeholder="제목을 입력하세요"/>
-    <textarea id="input-body" placeholder="내용을 입력하세요 (# 제목, - 리스트, **굵게** 등 마크다운 가능)" style="min-height:200px; resize:vertical;"></textarea>
+    <textarea id="input-body" placeholder="내용을 입력하세요. (**굵게**, _밑줄_, /기울임/ 문법 적용 시 기호는 자동으로 제거됩니다.)" style="min-height:200px; resize:vertical;"></textarea>
     <div style="display:flex; justify-content:flex-end; gap:10px;">
       <button onclick="closeWrite()" class="btn-back">취소</button>
       <button onclick="submitPost()" class="btn-write">등록</button>
@@ -78,7 +96,6 @@
   let currentIdx = null; 
   let isEditMode = false;
   
-  // 로그인 유무 및 권한 파악 (일반 회원, 관리자 모두 게시판 글쓰기 허용)
   const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
 
   window.onload = function() {
@@ -91,6 +108,53 @@
       posts = JSON.parse(saved);
       renderList();
     }
+    updateAuthUI();
+  }
+
+  function updateAuthUI() {
+    const authBtn = document.getElementById('auth-btn');
+    if (isLoggedIn) {
+      authBtn.textContent = '로그아웃';
+      authBtn.onclick = function() {
+        if (confirm('로그아웃 하시겠습니까?')) {
+          localStorage.removeItem('isLoggedIn');
+          localStorage.removeItem('userRole');
+          alert('로그아웃 되었습니다.');
+          window.location.reload();
+        }
+      };
+    } else {
+      authBtn.textContent = '로그인';
+      authBtn.onclick = function() {
+        window.location.href = "./login.html";
+      };
+    }
+  }
+
+  // 기호를 완벽히 정제하여 가공하는 단독 파서 함수
+  function parseContent(text) {
+    if(!text) return "";
+    
+    // 1. HTML 엔티티 이스케이프
+    let escaped = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt bridge;");
+
+    // 2. **굵게** 처리
+    escaped = escaped.replace(/\*\*([^\*]+?)\*\*/g, '<strong>$1</strong>');
+    
+    // 3. //기울임// 처리 (복수 기호 우선)
+    escaped = escaped.replace(/\/\/([^\/]+?)\/\//g, '<em>$1</em>');
+    
+    // 4. /기울임/ 처리 (태그 안의 슬래시 오작동 방지를 위해 < > 가 없는 문자열만 매칭)
+    escaped = escaped.replace(/\/([^<>\/]+?)\//g, '<em>$1</em>');
+    
+    // 5. _밑줄_ 처리
+    escaped = escaped.replace(/_([^_]+?)_/g, '<u>$1</u>');
+    
+    // 6. 줄바꿈 변환
+    return escaped.replace(/\n/g, '<br>');
   }
 
   function renderList() {
@@ -143,7 +207,7 @@
   function submitPost() {
     if (!isLoggedIn) return;
     const title = document.getElementById('input-title').value.trim();
-    const body = document.getElementById('input-body').value; // 마크다운 공백 보존을 위해 trim 제거 혹은 유연하게 처리
+    const body = document.getElementById('input-body').value; 
     if (!title || !body.trim()) { alert('제목과 내용을 모두 입력해주세요.'); return; }
 
     const now = new Date();
@@ -159,10 +223,7 @@
     
     saveAndRender();
     closeWrite();
-    
-    if (isEditMode) {
-      viewPost(currentIdx); 
-    }
+    if (isEditMode) viewPost(currentIdx); 
   }
 
   function viewPost(idx) {
@@ -171,8 +232,7 @@
     document.getElementById('view-title').textContent = p.title;
     document.getElementById('view-meta').textContent = p.date;
     
-    // 🛠️ 마크다운 변환 렌더링 적용 
-    document.getElementById('view-body').innerHTML = marked.parse(p.body);
+    document.getElementById('view-body').innerHTML = parseContent(p.body);
     
     const editBtn = document.getElementById('edit-btn');
     const deleteBtn = document.getElementById('delete-btn');

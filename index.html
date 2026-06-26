@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>이해연 — 기획과 마케팅을 공부하는 중</title>
   <link rel="stylesheet" href="./style.css">
-  
   <style>
-    /* 로그아웃 버튼 스타일 추가 (기존 톤 유지) */
     .btn-auth {
       cursor: pointer;
       color: var(--muted) !important;
@@ -182,7 +180,6 @@
 </footer>
 
 <script>
-  // 1. 기존 화면 등장 애니메이션 스크립트
   const reveals = document.querySelectorAll('.reveal');
   const obs = new IntersectionObserver(entries => {
     entries.forEach((e, i) => {
@@ -191,7 +188,6 @@
   }, {threshold: 0.08});
   reveals.forEach(r => obs.observe(r));
 
-  // 2. 로그인/로그아웃 상태 제어
   const authBtn = document.getElementById('auth-btn');
 
   function updateAuthUI() {
@@ -202,19 +198,20 @@
       authBtn.onclick = function() {
         if (confirm('로그아웃 하시겠습니까?')) {
           localStorage.removeItem('isLoggedIn');
-          updateAuthUI(); // UI 갱신
+          localStorage.removeItem('userRole'); 
+          updateAuthUI();
           alert('로그아웃 되었습니다.');
+          window.location.reload();
         }
       };
     } else {
       authBtn.textContent = '로그인';
       authBtn.onclick = function() {
-        window.location.href = "./login.html";
+        window.location.href = "./login.html"; 
       };
     }
   }
 
-  // 페이지가 처음 열릴 때 실행
   updateAuthUI();
 </script>
 </body>

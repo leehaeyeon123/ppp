@@ -34,7 +34,7 @@
     .post-view.open{display:block}
     .post-view-title{font-family:'Gowun Batang',serif;font-size:1.8rem;margin-bottom:.5rem}
     .post-view-meta{font-size:.78rem;color:var(--muted);padding-bottom:1rem;border-bottom:1px solid var(--border);margin-bottom:1.8rem}
-    .post-view-body{font-size:.92rem;color:var(--muted);line-height:2.1;white-space:pre-wrap; min-height: 200px;}
+    .post-view-body{font-size:.92rem;color:var(--muted);line-height:2.1; min-height: 200px;}
     
     .view-btns{display:flex; gap:10px; margin-top:2.5rem;}
     .btn-back, .btn-delete{padding:.6rem 1.2rem; border:1px solid var(--border); background:none; color:var(--muted); font-size:.78rem; cursor:pointer;}

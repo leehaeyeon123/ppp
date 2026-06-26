@@ -39,7 +39,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content
 .post-view-tag{font-size:.72rem;padding:.3rem .8rem;background:var(--bg2);color:var(--accent);letter-spacing:.05em;display:inline-block;margin-bottom:1rem}
 .post-view-title{font-family:'Gowun Batang',serif;font-size:1.8rem;margin-bottom:.5rem}
 .post-view-meta{font-size:.78rem;color:var(--muted);padding-bottom:1rem;border-bottom:1px solid var(--border);margin-bottom:1.8rem}
-.post-view-body{font-size:.92rem;color:var(--muted);line-height:2.1;white-space:pre-wrap}
+.post-view-body{font-size:.92rem;color:var(--muted);line-height:2.1;}
 
 .post-view-actions{display:flex;gap:.8rem;margin-top:2.5rem;align-items:center}
 .btn-back,.btn-edit,.btn-delete{padding:.6rem 1.2rem;font-family:'Noto Sans KR',sans-serif;font-size:.78rem;cursor:pointer;transition:all .2s;height:2.4rem;display:flex;align-items:center}

@@ -1,4 +1,3 @@
-<!-- [study.html] 전체 교체 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -7,15 +6,33 @@
   <title>공부기록 — 이해연</title>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./study.css"/>
-  <!-- 마크다운 라이브러리 추가 -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
-    /* 마크다운 스타일 보정 */
-    .post-view-body h1, .post-view-body h2, .post-view-body h3 { margin: 1rem 0 0.5rem; color: var(--text); font-family: 'Gowun Batang'; }
-    .post-view-body p { margin-bottom: 0.8rem; }
-    .post-view-body ul, .post-view-body ol { padding-left: 1.5rem; margin-bottom: 0.8rem; }
-    .post-view-body code { background: var(--bg2); padding: 0.2rem 0.4rem; font-size: 0.85rem; border-radius: 4px; }
-    .post-view-body pre { background: #2d3748; color: #fff; padding: 1rem; overflow-x: auto; border-radius: 6px; margin: 1rem 0; font-size: 0.85rem; line-height: 1.4; }
+    /* ==========================================================================
+       [통일] 마크다운 및 커스텀 스타일 렌더링 서식
+       ========================================================================== */
+    .post-view-body {
+      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.75;
+      word-wrap: break-word;
+    }
+
+    .post-view-body strong {
+      font-weight: 700;
+      color: var(--accent) !important;
+    }
+    .post-view-body em {
+      font-style: italic;
+      color: inherit;
+    }
+    .post-view-body u {
+      text-decoration: underline;
+      text-underline-position: under;
+    }
+    
+    .btn-auth { cursor: pointer; color: var(--muted) !important; font-weight: 500; }
+    .btn-auth:hover { color: var(--accent) !important; }
   </style>
 </head>
 <body>
@@ -29,6 +46,7 @@
     <a href="./board.html">게시판</a>
     <a href="./study.html" class="active">공부기록</a>
     <a href="index.html#contact">연락처</a>
+    <a id="auth-btn" class="btn-auth">로그인</a>
   </div>
 </nav>
 
@@ -66,18 +84,17 @@
   </div>
 </div>
 
-<!-- 모달 영역 생략하지 않고 권한에 맞춰 연동유지 -->
 <div class="modal-overlay" id="write-modal">
   <div class="modal">
     <button class="modal-close" onclick="closeWrite()">✕</button>
-    <div class="modal-title">기록 추가 (마크다운)</div>
+    <div class="modal-title">기록 추가</div>
     <input type="text" id="input-title" placeholder="제목을 입력하세요"/>
     <select id="input-cat">
       <option value="기획">기획</option>
       <option value="마케팅">마케팅</option>
       <option value="기타">기타</option>
     </select>
-    <textarea id="input-body" placeholder="공부한 내용을 마크다운으로 입력하세요"></textarea>
+    <textarea id="input-body" placeholder="공부한 내용을 입력하세요. (**굵게**, _밑줄_, /기울임/ 문법 적용 시 기호는 자동으로 제거됩니다.)"></textarea>
     <label class="img-upload-label">
       📎 이미지 첨부 (여러 장 가능)
       <input type="file" id="input-imgs" accept="image/*" multiple style="display:none" onchange="previewImgs('input-imgs','input-preview')"/>
@@ -120,7 +137,6 @@
   let inputImgData = [];
   let editImgData = [];
   
-  // 🔒 오직 'admin' 권한이 있는 해연님만 작성 가능 하도록 엄격 제어
   const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
   const isAdmin = localStorage.getItem('userRole') === 'admin';
 
@@ -129,6 +145,27 @@
       document.getElementById('main-write-btn').style.display = 'block';
     }
     renderCards();
+    updateAuthUI();
+  }
+
+  function updateAuthUI() {
+    const authBtn = document.getElementById('auth-btn');
+    if (isLoggedIn) {
+      authBtn.textContent = '로그아웃';
+      authBtn.onclick = function() {
+        if (confirm('로그아웃 하시겠습니까?')) {
+          localStorage.removeItem('isLoggedIn');
+          localStorage.removeItem('userRole');
+          alert('로그아웃 되었습니다.');
+          window.location.reload();
+        }
+      };
+    } else {
+      authBtn.textContent = '로그인';
+      authBtn.onclick = function() {
+        window.location.href = "./login.html";
+      };
+    }
   }
 
   function saveToLocalStorage() {
@@ -141,21 +178,59 @@
     renderCards();
   }
 
+  // 카드 미리보기 메인에서 서식 기호를 완벽하게 제거하는 필터 함수
+  function cleanPreviewText(str) {
+    if(!str) return "";
+    return str
+      .replace(/\*\*([\s\S]*?)\*\*/g, '$1')
+      .replace(/\/\/([\s\S]*?)\/\//g, '$1')
+      .replace(/\/([^\/]+?)\//g, '$1') // 정규식 슬래시 누락 오타 및 패턴 안정화 수정
+      .replace(/_([\s\S]*?)_/g, '$1')
+      .trim();
+  }
+
+  // 기호를 완벽히 정제하여 가공하는 단독 파서 함수
+  function parseContent(text) {
+    if(!text) return "";
+    
+    // 1. HTML 엔티티 이스케이프
+    let escaped = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    // 2. **굵게** 처리
+    escaped = escaped.replace(/\*\*([^\*]+?)\*\*/g, '<strong>$1</strong>');
+    
+    // 3. //기울임// 처리
+    escaped = escaped.replace(/\/\/([^\/]+?)\/\//g, '<em>$1</em>');
+    
+    // 4. /기울임/ 처리 (태그 내부 슬래시 치환 에러 방지용 패턴)
+    escaped = escaped.replace(/\/([^<>\/]+?)\//g, '<em>$1</em>');
+    
+    // 5. _밑줄_ 처리
+    escaped = escaped.replace(/_([^_]+?)_/g, '<u>$1</u>');
+    
+    // 6. 최종 줄바꿈 변환
+    return escaped.replace(/\n/g, '<br>');
+  }
+
   function renderCards() {
     const grid = document.getElementById('cards-grid');
     const filtered = currentFilter === '전체' ? posts : posts.filter(p => p.cat === currentFilter);
-    document.getElementById('post-count').textContent = posts.length;
+    document.getElementById('post-count').textContent = filtered.length;
     if (filtered.length === 0) { grid.innerHTML = '<div class="cards-empty">해당하는 기록이 없습니다.</div>'; return; }
     
     grid.innerHTML = filtered.slice().reverse().map(p => {
       const idx = posts.indexOf(p);
       const imgHtml = p.imgs && p.imgs[0] ? `<img class="card-img" src="${p.imgs[0]}" alt=""/>` : '';
-      // 프리뷰 텍스트는 마크다운 태그를 제외한 순수 텍스트 표현을 위해 정규식으로 태그 살짝 걷어낼 수 있으나 기본값 유지
+      const previewText = cleanPreviewText(p.body).slice(0, 70);
+      
       return `<div class="study-card" onclick="viewPost(${idx})">
         ${imgHtml}
         <div class="card-top"><span class="card-tag">${p.cat}</span><span class="card-date">${p.date}</span></div>
         <div class="card-title">${p.title}</div>
-        <div class="card-preview">${p.body}</div>
+        <div class="card-preview">${previewText}${cleanPreviewText(p.body).length > 70 ? '...' : ''}</div>
       </div>`;
     }).join('');
   }
@@ -185,7 +260,7 @@
   }
 
   function openWrite() {
-    if (!isLoggedIn || !isAdmin) { alert('해연(관리자)님만 작성 가능합니다.'); return; }
+    if (!isLoggedIn || !isAdmin) { alert('관리자 계정만 작성 가능합니다.'); return; }
     inputImgData = [];
     document.getElementById('input-preview').innerHTML = '';
     document.getElementById('write-modal').classList.add('open');
@@ -223,13 +298,11 @@
     document.getElementById('view-title').textContent = p.title;
     document.getElementById('view-meta').textContent = p.date;
     
-    // 🛠️ 공부기록 본문 마크다운 파싱 렌더링 적용
-    document.getElementById('view-body').innerHTML = marked.parse(p.body);
+    document.getElementById('view-body').innerHTML = parseContent(p.body);
     
     const imgsWrap = document.getElementById('view-imgs');
     imgsWrap.innerHTML = (p.imgs || []).map(src => `<img src="${src}" alt=""/>`).join('');
     
-    // 관리자일때만 수정/삭제 보이기
     if (isLoggedIn && isAdmin) {
       document.getElementById('view-edit-btn').style.display = 'inline-block';
       document.getElementById('view-delete-btn').style.display = 'inline-block';
@@ -239,13 +312,13 @@
     }
 
     document.getElementById('list-view').style.display = 'none';
-    document.getElementById('post-view').classList.add('open');
+    document.getElementById('post-view').style.display = 'block';
   }
   
   function closePost() {
     currentIdx = -1;
     document.getElementById('list-view').style.display = 'block';
-    document.getElementById('post-view').classList.remove('open');
+    document.getElementById('post-view').style.display = 'none';
   }
 
   function openEdit() {
