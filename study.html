@@ -8,28 +8,104 @@
   <link rel="stylesheet" href="./study.css"/>
   <style>
     /* ==========================================================================
-       [통일] 마크다운 및 커스텀 스타일 렌더링 서식
+       마크다운 렌더링 서식 (전체 문법 지원)
        ========================================================================== */
     .post-view-body {
       font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
       font-size: 0.95rem;
       color: var(--text);
-      line-height: 1.75;
+      line-height: 1.85;
       word-wrap: break-word;
     }
-
-    .post-view-body strong {
-      font-weight: 700;
-      color: var(--accent) !important;
+    .post-view-body h1,.post-view-body h2,.post-view-body h3,
+    .post-view-body h4,.post-view-body h5,.post-view-body h6 {
+      font-family: 'Gowun Batang', serif;
+      color: var(--text);
+      margin: 1.4em 0 .5em;
+      line-height: 1.3;
     }
-    .post-view-body em {
+    .post-view-body h1 { font-size: 1.7em; border-bottom: 2px solid var(--border); padding-bottom: .3em; }
+    .post-view-body h2 { font-size: 1.4em; border-bottom: 1px solid var(--border); padding-bottom: .25em; }
+    .post-view-body h3 { font-size: 1.2em; }
+    .post-view-body h4 { font-size: 1.05em; }
+    .post-view-body h5,.post-view-body h6 { font-size: .95em; color: var(--muted); }
+    .post-view-body strong { font-weight: 700; color: var(--accent); }
+    .post-view-body em { font-style: italic; }
+    .post-view-body u { text-decoration: underline; text-underline-position: under; }
+    .post-view-body del { text-decoration: line-through; color: var(--muted); }
+    .post-view-body code {
+      font-family: 'Courier New', Courier, monospace;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: .1em .4em;
+      font-size: .88em;
+      color: var(--accent);
+    }
+    .post-view-body pre {
+      background: #1e1a16;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.2em 1.4em;
+      overflow-x: auto;
+      margin: 1em 0;
+    }
+    .post-view-body pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      color: #e8a87c;
+      font-size: .85em;
+    }
+    .post-view-body blockquote {
+      border-left: 3px solid var(--accent2);
+      margin: 1em 0;
+      padding: .6em 1.2em;
+      background: var(--bg2);
+      color: var(--muted);
       font-style: italic;
-      color: inherit;
     }
-    .post-view-body u {
+    .post-view-body blockquote p { margin: 0; }
+    .post-view-body ul,.post-view-body ol {
+      margin: .7em 0;
+      padding-left: 1.8em;
+    }
+    .post-view-body li { margin: .25em 0; }
+    .post-view-body input[type="checkbox"] { margin-right: .4em; }
+    .post-view-body hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.5em 0;
+    }
+    .post-view-body a {
+      color: var(--accent);
       text-decoration: underline;
-      text-underline-position: under;
     }
+    .post-view-body a:hover { color: var(--accent2); }
+    .post-view-body img {
+      max-width: 100%;
+      border: 1px solid var(--border);
+      margin: .5em 0;
+    }
+    .post-view-body table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+      font-size: .88em;
+    }
+    .post-view-body th {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: .5em .9em;
+      font-weight: 600;
+      text-align: left;
+    }
+    .post-view-body td {
+      border: 1px solid var(--border);
+      padding: .45em .9em;
+    }
+    .post-view-body tr:nth-child(even) td { background: var(--bg); }
+    .post-view-body p { margin: .5em 0; }
     
     .btn-auth { cursor: pointer; color: var(--muted) !important; font-weight: 500; }
     .btn-auth:hover { color: var(--accent) !important; }
@@ -94,7 +170,7 @@
       <option value="마케팅">마케팅</option>
       <option value="기타">기타</option>
     </select>
-    <textarea id="input-body" placeholder="공부한 내용을 입력하세요. (**굵게**, _밑줄_, /기울임/ 문법 적용 시 기호는 자동으로 제거됩니다.)"></textarea>
+    <textarea id="input-body" placeholder="마크다운 문법을 지원합니다.&#10;# 제목, **굵게**, *기울임*, _밑줄_, ~~취소선~~&#10;- 목록, 1. 번호목록, > 인용, &#96;코드&#96;, | 표 |&#10;[링크](url), ![이미지](url), --- 가로줄"></textarea>
     <label class="img-upload-label">
       📎 이미지 첨부 (여러 장 가능)
       <input type="file" id="input-imgs" accept="image/*" multiple style="display:none" onchange="previewImgs('input-imgs','input-preview')"/>
@@ -117,7 +193,7 @@
       <option value="마케팅">마케팅</option>
       <option value="기타">기타</option>
     </select>
-    <textarea id="edit-body" placeholder="공부한 내용을 입력하세요"></textarea>
+    <textarea id="edit-body" placeholder="마크다운 문법을 지원합니다. # 제목, **굵게**, *기울임*, _밑줄_, ~~취소선~~, - 목록, > 인용, &#96;코드&#96;"></textarea>
     <label class="img-upload-label">
       📎 이미지 첨부 (여러 장 가능)
       <input type="file" id="edit-imgs" accept="image/*" multiple style="display:none" onchange="previewImgs('edit-imgs','edit-preview')"/>
@@ -178,41 +254,119 @@
     renderCards();
   }
 
-  // 카드 미리보기 메인에서 서식 기호를 완벽하게 제거하는 필터 함수
+  // 카드 미리보기용 기호 제거 함수
   function cleanPreviewText(str) {
     if(!str) return "";
     return str
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/#{1,6}\s/g, '')
       .replace(/\*\*([\s\S]*?)\*\*/g, '$1')
-      .replace(/\/\/([\s\S]*?)\/\//g, '$1')
-      .replace(/\/([^\/]+?)\//g, '$1') // 정규식 슬래시 누락 오타 및 패턴 안정화 수정
-      .replace(/_([\s\S]*?)_/g, '$1')
+      .replace(/__([\s\S]*?)__/g, '$1')
+      .replace(/~~([\s\S]*?)~~/g, '$1')
+      .replace(/\*([^\*\n]+?)\*/g, '$1')
+      .replace(/_([^_\n]+?)_/g, '$1')
+      .replace(/`([^`]+?)`/g, '$1')
+      .replace(/\[([^\]]+?)\]\([^\)]+?\)/g, '$1')
+      .replace(/!\[([^\]]*?)\]\([^\)]+?\)/g, '')
+      .replace(/^>{1,}\s?/gm, '')
+      .replace(/^[-*+]\s/gm, '')
+      .replace(/^\d+\.\s/gm, '')
+      .replace(/^[-*_]{3,}$/gm, '')
+      .replace(/\|/g, ' ')
       .trim();
   }
 
-  // 기호를 완벽히 정제하여 가공하는 단독 파서 함수
+  // 전체 마크다운 파서
   function parseContent(text) {
     if(!text) return "";
-    
-    // 1. HTML 엔티티 이스케이프
-    let escaped = text
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
 
-    // 2. **굵게** 처리
-    escaped = escaped.replace(/\*\*([^\*]+?)\*\*/g, '<strong>$1</strong>');
-    
-    // 3. //기울임// 처리
-    escaped = escaped.replace(/\/\/([^\/]+?)\/\//g, '<em>$1</em>');
-    
-    // 4. /기울임/ 처리 (태그 내부 슬래시 치환 에러 방지용 패턴)
-    escaped = escaped.replace(/\/([^<>\/]+?)\//g, '<em>$1</em>');
-    
-    // 5. _밑줄_ 처리
-    escaped = escaped.replace(/_([^_]+?)_/g, '<u>$1</u>');
-    
-    // 6. 최종 줄바꿈 변환
-    return escaped.replace(/\n/g, '<br>');
+    // 코드블록 추출
+    const codeBlocks = [];
+    text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+      codeBlocks.push({ lang: lang || '', code });
+      return `\x00CODEBLOCK${codeBlocks.length - 1}\x00`;
+    });
+
+    // 인라인 코드 추출
+    const inlineCodes = [];
+    text = text.replace(/`([^`\n]+?)`/g, (_, code) => {
+      const esc = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      inlineCodes.push(`<code>${esc}</code>`);
+      return `\x00INLINE${inlineCodes.length - 1}\x00`;
+    });
+
+    // HTML 이스케이프
+    text = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+    // 표
+    text = text.replace(/((?:\|.+\|\n?)+)/g, (block) => {
+      const rows = block.trim().split('\n').filter(r => r.trim());
+      if (rows.length < 2) return block;
+      const isSep = r => /^\|[\s\-:|]+\|/.test(r);
+      let html = '<table>', inBody = false;
+      rows.forEach((row, i) => {
+        if (isSep(row)) { inBody = true; return; }
+        const cells = row.replace(/^\||\|$/g,'').split('|').map(c => c.trim());
+        if (!inBody && i === 0) {
+          html += '<thead><tr>' + cells.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+        } else {
+          html += '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+        }
+      });
+      return html + '</tbody></table>';
+    });
+
+    // 가로줄
+    text = text.replace(/^(?:\*\s*){3,}$|^(?:-\s*){3,}$|^(?:_\s*){3,}$/gm, '<hr>');
+
+    // 제목
+    text = text.replace(/^(#{1,6})\s+(.+)$/gm, (_, h, t) => `<h${h.length}>${t}</h${h.length}>`);
+
+    // 인용문
+    text = text.replace(/((?:^&gt;&gt;\s?.+\n?)+)/gm, (b) =>
+      `<blockquote><blockquote><p>${b.replace(/^&gt;&gt;\s?/gm,'').trim()}</p></blockquote></blockquote>\n`);
+    text = text.replace(/((?:^&gt;\s?.+\n?)+)/gm, (b) =>
+      `<blockquote><p>${b.replace(/^&gt;\s?/gm,'').trim()}</p></blockquote>\n`);
+
+    // 순서 없는 목록
+    text = text.replace(/((?:^[ \t]*[-*+] .+\n?)+)/gm, (b) =>
+      '<ul>' + b.trim().split('\n').map(l => { const m=l.match(/^[ \t]*[-*+] (.+)/); return m?`<li>${m[1]}</li>`:''; }).join('') + '</ul>\n');
+
+    // 순서 있는 목록
+    text = text.replace(/((?:^[ \t]*\d+\. .+\n?)+)/gm, (b) =>
+      '<ol>' + b.trim().split('\n').map(l => { const m=l.match(/^[ \t]*\d+\. (.+)/); return m?`<li>${m[1]}</li>`:''; }).join('') + '</ol>\n');
+
+    // 인라인 서식
+    text = text.replace(/\*\*([^\*\n]+?)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/__([^_\n]+?)__/g, '<strong>$1</strong>');
+    text = text.replace(/~~([^~\n]+?)~~/g, '<del>$1</del>');
+    text = text.replace(/\*([^\*\n]+?)\*/g, '<em>$1</em>');
+    text = text.replace(/\/\/([^\/\n]+?)\/\//g, '<em>$1</em>'); // 커스텀
+    text = text.replace(/_([^_\n]+?)_/g, '<u>$1</u>'); // 커스텀 밑줄
+
+    // 이미지 & 링크
+    text = text.replace(/!\[([^\]]*?)\]\(([^\)]+?)\)/g, '<img src="$2" alt="$1">');
+    text = text.replace(/\[([^\]]+?)\]\(([^\)]+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+    // 코드블록 복원
+    codeBlocks.forEach(({lang, code}, i) => {
+      const esc = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      text = text.replace(`\x00CODEBLOCK${i}\x00`, `<pre><code>${esc.trim()}</code></pre>`);
+    });
+    inlineCodes.forEach((html, i) => {
+      text = text.replace(`\x00INLINE${i}\x00`, html);
+    });
+
+    // 단락 처리
+    const parts = text.split(/\n{2,}/);
+    text = parts.map(part => {
+      part = part.trim();
+      if (!part) return '';
+      if (/^<(h[1-6]|ul|ol|blockquote|pre|table|hr)/.test(part)) return part;
+      return `<p>${part.replace(/\n/g,'<br>')}</p>`;
+    }).join('\n');
+
+    return text;
   }
 
   function renderCards() {
